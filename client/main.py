@@ -46,6 +46,8 @@ CACHE_DIR = f"{CLIENT_BASE}/cache"
 PORT = 18080
 HTTP_BASE = f"http://127.0.0.1:{PORT}"
 
+ADB = ["adb"]  # set to ["adb", "-s", <serial>] after arg parsing
+
 def run(cmd):
     print(">", " ".join(cmd))
     r = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -56,7 +58,7 @@ def run(cmd):
 
 def create_server_dir(path: str):
     subprocess.run(
-        ["adb", "shell", "mkdir", "-p", path],
+        ADB + ["shell", "mkdir", "-p", path],
         check=True
     )
 
@@ -74,7 +76,7 @@ def adb_push_files(local_path: str, destination_path: str):
 
     try:
         subprocess.run(
-            ["adb", "push", local_path, destination_path],
+            ADB + ["push", local_path, destination_path],
             check=True
         )
         
@@ -85,19 +87,19 @@ def adb_push_files(local_path: str, destination_path: str):
 
 
 def adb_pull(phone_path, local_path):
-    run(["adb", "pull", phone_path, local_path])
+    run(ADB + ["pull", phone_path, local_path])
 
 def start_service():
-    run(["adb", "shell", "am", "start-foreground-service", f"{SERVER_PACKAGE}/.ServerService"])
-    
+    run(ADB + ["shell", "am", "start-foreground-service", f"{SERVER_PACKAGE}/.ServerService"])
+
 def stop_service():
     try:
-        run(["adb", "shell", "am", "stopservice", "-n", f"{SERVER_PACKAGE}/.ServerService"])
+        run(ADB + ["shell", "am", "stopservice", "-n", f"{SERVER_PACKAGE}/.ServerService"])
     except:
         pass
 
 def adb_forward():
-    run(["adb", "forward", f"tcp:{PORT}", f"tcp:{PORT}"])
+    run(ADB + ["forward", f"tcp:{PORT}", f"tcp:{PORT}"])
 
 def start_benchmark(test_type: TestType):
     payload = {"test_type": test_type.value}
@@ -140,6 +142,9 @@ def status_stream():
         time.sleep(1)
 
 def main(args):
+    global ADB
+    ADB = ["adb", "-s", args.device]
+
     # Infer test type from config
     # Simple idea: If "downstream_task" in config, it's a TASK test, else ANN test
     with open(args.config, "r") as f:
@@ -248,6 +253,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Load BenchmarkTest JSON config (Pydantic) with validations")
     parser.add_argument("--config", "-c", required=True, help="Path to config.json")
+    parser.add_argument("--device", "-d", required=True, help="ADB device serial number (adb devices)")
     parser.add_argument("--output_path", "-o", help="Path to output results json file.", default=f"{CLIENT_BASE}/benchmark_results")
     parser.add_argument("--set", action="append", default=[], help="Override dotted-key PATH=VALUE")
     args = parser.parse_args()
