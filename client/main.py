@@ -240,6 +240,13 @@ def main(args):
     
     # Write metric results
     with open(f"{args.output_path}/metrics.json", "w") as f:
+        results["cpu"] = {
+            "usagePercent": {
+                "mean": 0,
+                "peak": 0
+            }
+        }
+        
         json.dump(results, f, indent=2)
         
     # Write the config file used

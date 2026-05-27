@@ -7,6 +7,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
+import android.os.Process
+import android.os.SystemClock
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import kotlin.math.abs
@@ -14,7 +16,8 @@ import kotlin.math.abs
 @Serializable
 data class MetricsResult(
     val memory: MemoryMetrics,
-    val power: PowerMetrics?
+    val power: PowerMetrics?,
+    val cpu: CpuMetrics?
 )
 
 @Serializable
@@ -30,6 +33,11 @@ data class PowerMetrics(
     val voltageV: PowerStats,
     val powerMw: PowerStats,
     val temperatureC: PowerStats
+)
+
+@Serializable
+data class CpuMetrics(
+    val usagePercent: PowerStats
 )
 
 @Serializable
@@ -74,6 +82,44 @@ object MemorySampler {
         val usedMb = (mi.totalMem - mi.availMem) / (1024 * 1024)
 
         return usedMb
+    }
+}
+
+class CpuSampler {
+    private var lastCpuTimeMs = Process.getElapsedCpuTime()
+    private var lastWallTimeMs = SystemClock.elapsedRealtime()
+
+    private val cpuStats = FloatStats()
+
+    fun sample(): Float {
+        val currentCpuTimeMs = Process.getElapsedCpuTime()
+        val currentWallTimeMs = SystemClock.elapsedRealtime()
+
+        val cpuDelta = currentCpuTimeMs - lastCpuTimeMs
+        val wallDelta = currentWallTimeMs - lastWallTimeMs
+
+        lastCpuTimeMs = currentCpuTimeMs
+        lastWallTimeMs = currentWallTimeMs
+
+        if (wallDelta <= 0L) return 0f
+
+        val numCores = Runtime.getRuntime().availableProcessors()
+
+        val usagePercent =
+            ((cpuDelta.toFloat() / wallDelta.toFloat()) / numCores) * 100f
+
+        cpuStats.add(usagePercent)
+
+        return usagePercent
+    }
+
+    fun getStats(): CpuMetrics {
+        return CpuMetrics(
+            usagePercent = PowerStats(
+                mean = cpuStats.mean(),
+                peak = cpuStats.peak
+            )
+        )
     }
 }
 
@@ -155,7 +201,8 @@ class HardwareMetricsEngine(
     private val memoryStats = LongStats()
     private val powerStats = FloatStats()
 
-    val powerSampler = PowerSampler(context)
+    private val powerSampler = PowerSampler(context)
+    private val cpuSampler = CpuSampler()
 
     private var job: Job? = null
     private var memoryBefore: Long = 0
@@ -176,6 +223,9 @@ class HardwareMetricsEngine(
                     // Power
                     powerSampler.sample()?.let { powerStats.add(it) }
 
+                    // CPU
+                    cpuSampler.sample()
+
                 } catch (_: Throwable) {
                     // swallow errors to avoid affecting benchmark
                 }
@@ -190,6 +240,7 @@ class HardwareMetricsEngine(
         scope.cancel()
 
         val samplerStats = powerSampler.getStats()
+        val cpuMetrics = cpuSampler.getStats()
 
         val powerMetrics =
             if (powerStats.mean() > 0f)
@@ -207,7 +258,8 @@ class HardwareMetricsEngine(
                 meanMB = memoryStats.mean(),
                 peakMB = memoryStats.peak
             ),
-            power = powerMetrics
+            power = powerMetrics,
+            cpu = cpuMetrics
         )
     }
 

@@ -1,5 +1,6 @@
 package com.example.cli
 
+import android.util.Log
 import com.example.cli.Progress.TaskProgress
 import com.example.cli.Progress.ANNProgress
 import fi.iki.elonen.NanoHTTPD
@@ -78,9 +79,16 @@ class HttpServer(port: Int = Constants.PORT): NanoHTTPD(port) {
             }
             return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "Not found")
         } catch (e: Exception) {
+            Log.e("HttpServer", "Request failed", e)
+
             val j = JSONObject()
-            j.put("error", e.message)
-            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", j.toString())
+            j.put("error", e.toString())
+            j.put("stacktrace", e.stackTraceToString())
+
+            return newFixedLengthResponse(
+                Response.Status.INTERNAL_ERROR,
+                "application/json",
+                j.toString())
         }
     }
 }

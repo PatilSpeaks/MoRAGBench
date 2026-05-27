@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.example.local_llm"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 24
