@@ -13,6 +13,11 @@ import java.util.EnumSet
 import kotlin.math.max
 import kotlin.math.sqrt
 
+enum class PoolingStrategy {
+    MEAN,
+    CLS,
+}
+
 class SentenceEmbedding {
     private lateinit var hfTokenizer: HFTokenizer
     private lateinit var ortEnvironment: OrtEnvironment
@@ -20,6 +25,7 @@ class SentenceEmbedding {
     private var useTokenTypeIds: Boolean = false
     private var outputTensorName: String = ""
     private var normalizeEmbedding: Boolean = false
+    private var poolingStrategy: PoolingStrategy = PoolingStrategy.MEAN
 
     suspend fun init(
         modelFilepath: String,
@@ -28,6 +34,7 @@ class SentenceEmbedding {
         outputTensorName: String,
         backend: String, // Should be one of "cpu", "xnnpack", "nnapi"
         normalizeEmbeddings: Boolean,
+        poolingStrategy: PoolingStrategy,
     ) = withContext(Dispatchers.IO) {
 
         hfTokenizer = HFTokenizer(tokenizerBytes)
@@ -55,6 +62,7 @@ class SentenceEmbedding {
         this@SentenceEmbedding.useTokenTypeIds = useTokenTypeIds
         this@SentenceEmbedding.outputTensorName = outputTensorName
         this@SentenceEmbedding.normalizeEmbedding = normalizeEmbeddings
+        this@SentenceEmbedding.poolingStrategy = poolingStrategy
     }
 
     suspend fun encode(sentence: String): FloatArray =
@@ -96,7 +104,14 @@ class SentenceEmbedding {
                                     && (outputValue[0] as Array<*>)[0] is FloatArray -> {
                                 val tokenEmbeddings3D =
                                     outputValue as Array<Array<FloatArray>>
-                                meanPooling(tokenEmbeddings3D[0], result.attentionMask)
+                                val tokenEmbeddings = tokenEmbeddings3D[0]
+
+                                when (poolingStrategy) {
+                                    PoolingStrategy.MEAN ->
+                                        meanPooling(tokenEmbeddings, result.attentionMask)
+                                    PoolingStrategy.CLS ->
+                                        tokenEmbeddings[0]
+                                }
                             }
 
                             // [1, hidden]

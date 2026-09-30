@@ -206,7 +206,7 @@ class MainActivity : AppCompatActivity() {
         scope.launch {
             try {
                 val queryEmbedding = withContext(Dispatchers.Default) {
-                    embeddingGenerator.generate(query)
+                    embeddingGenerator.generateQuery(query)
                 }
                 val k = settings.faiss.topK
                 val dim = embeddingModel.dim

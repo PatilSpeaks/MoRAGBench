@@ -832,7 +832,7 @@ class TaskBenchmark(private val context: Context) {
             if (!noContext) {
                 // Generate query embeddings and measure time
                 val queryEmbeddingStart = System.nanoTime()
-                val queryEmbedding = embeddingGenerator.generate(question)
+                val queryEmbedding = embeddingGenerator.generateQuery(question)
                 val queryEmbeddingEnd = System.nanoTime()
                 metrics.queryEmbeddingsMs = (queryEmbeddingEnd - queryEmbeddingStart) / 1_000_000L
 

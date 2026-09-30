@@ -1,6 +1,7 @@
 package com.example.onnxtok
 
 import android.content.Context
+import com.ml.shubham0204.sentence_embeddings.PoolingStrategy
 import com.ml.shubham0204.sentence_embeddings.SentenceEmbedding
 import kotlinx.coroutines.*
 import java.io.File
@@ -13,6 +14,7 @@ import java.io.File
 class EmbeddingGenerator(private val context: Context) : AutoCloseable {
 
     private var sentenceEmbedding: SentenceEmbedding? = null
+    private var queryPrefix: String = ""
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     /**
@@ -36,9 +38,14 @@ class EmbeddingGenerator(private val context: Context) : AutoCloseable {
             useTokenTypeIds = embeddingModel.useTokenTypeIds,
             outputTensorName = embeddingModel.outputTensorName,
             backend = backend,
-            normalizeEmbeddings = normalizeEmbeddings
+            normalizeEmbeddings = normalizeEmbeddings,
+            poolingStrategy = when (embeddingModel.poolingStrategy) {
+                EmbeddingPoolingStrategy.MEAN -> PoolingStrategy.MEAN
+                EmbeddingPoolingStrategy.CLS -> PoolingStrategy.CLS
+            }
         )
         sentenceEmbedding = se
+        queryPrefix = embeddingModel.queryPrefix
     }
 
     private fun isAbsolutePath(path: String): Boolean {
@@ -78,6 +85,15 @@ class EmbeddingGenerator(private val context: Context) : AutoCloseable {
         val se = sentenceEmbedding
             ?: throw IllegalStateException("EmbeddingGenerator not initialized. Call initialize() first.")
         se.encode(text)
+    }
+
+    /**
+     * Encodes retrieval query text using any model-specific query prefix.
+     */
+    suspend fun generateQuery(text: String): FloatArray = withContext(Dispatchers.IO) {
+        val se = sentenceEmbedding
+            ?: throw IllegalStateException("EmbeddingGenerator not initialized. Call initialize() first.")
+        se.encode(queryPrefix + text)
     }
 
     /**
