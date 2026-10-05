@@ -30,6 +30,7 @@ class SupportedLLMDType(Enum):
 class LLM(BaseModel):
     model_name: SupportedLLM
     aug_method: AugmentationMethod = AugmentationMethod.CONCATENATION
+    engine: str = "onnx"
     backend: Backend = Backend.CPU
     use_sampling: bool = False
     repetition_penalty: float = Field(1, ge=1)

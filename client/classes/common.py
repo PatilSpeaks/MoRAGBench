@@ -4,6 +4,7 @@ class Backend(Enum):
     CPU = "cpu"
     XNNPACK = "xnnpack"
     NNAPI = "nnapi"
+    GPU = "gpu"
     
 class SamplingMethod(Enum):
     RANDOM = "random"
