@@ -427,8 +427,14 @@ Defines the configuration of each pipeline component:
 | Parameter | Type | Description | Supported Values |
 | --- | --- | --- | --- |
 | `backend` | string | Inference backend | `cpu`, `xnnpack`, `nnapi` |
-| `model_name` | string | Embedding model | `all-minilm-l6-v2`, `all-minilm-l12-v2` |
-| `dtype` | string | Weight precision | `float32`, `int8` |
+| `model_name` | string | Embedding model | `all-minilm-l6-v2`, `all-minilm-l12-v2`, `embeddinggemma`, `bge-small-en-v1.5` |
+| `dtype` | string | Weight precision | Model-dependent; see below |
+
+### BGE-small-en-v1.5
+
+`bge-small-en-v1.5` currently supports the `float32` dtype. Because the default embedding dtype is `int8`, BGE configurations must explicitly set `"dtype": "float32"`.
+
+`bge-small-en-v1.5` uses CLS pooling. For retrieval queries, MoRAGBench automatically prepends the model-specific instruction `Represent this sentence for searching relevant passages: `. Document/chunk embeddings are generated without this prefix.
 
 ---
 
