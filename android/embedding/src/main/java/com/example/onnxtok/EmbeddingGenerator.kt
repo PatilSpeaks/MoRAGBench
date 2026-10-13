@@ -14,7 +14,6 @@ import java.io.File
 class EmbeddingGenerator(private val context: Context) : AutoCloseable {
 
     private var sentenceEmbedding: SentenceEmbedding? = null
-    private var queryPrefix: String = ""
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     /**
@@ -45,7 +44,6 @@ class EmbeddingGenerator(private val context: Context) : AutoCloseable {
             }
         )
         sentenceEmbedding = se
-        queryPrefix = embeddingModel.queryPrefix
     }
 
     private fun isAbsolutePath(path: String): Boolean {
@@ -85,15 +83,6 @@ class EmbeddingGenerator(private val context: Context) : AutoCloseable {
         val se = sentenceEmbedding
             ?: throw IllegalStateException("EmbeddingGenerator not initialized. Call initialize() first.")
         se.encode(text)
-    }
-
-    /**
-     * Encodes retrieval query text using any model-specific query prefix.
-     */
-    suspend fun generateQuery(text: String): FloatArray = withContext(Dispatchers.IO) {
-        val se = sentenceEmbedding
-            ?: throw IllegalStateException("EmbeddingGenerator not initialized. Call initialize() first.")
-        se.encode(queryPrefix + text)
     }
 
     /**

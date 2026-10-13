@@ -283,6 +283,7 @@ class TaskBenchmark(private val context: Context) {
         benchmarkTask(
             questions = taskFiles["questions"]!!.jsonArray,
             embeddingGenerator = embeddingGenerator,
+            queryPrefix = embeddingModel.queryPrefix,
             faissIndex = faissIndex,
             task = downstreamTask,
             llm = llm,
@@ -739,6 +740,7 @@ class TaskBenchmark(private val context: Context) {
     private suspend fun benchmarkTask(
         questions: JsonArray,
         embeddingGenerator: EmbeddingGenerator,
+        queryPrefix: String,
         faissIndex: FaissIndex,
         task: DownstreamTask,
         llm: LocalLLM,
@@ -787,6 +789,7 @@ class TaskBenchmark(private val context: Context) {
                     questionIndex = index,
                     question = question.jsonPrimitive.content,
                     embeddingGenerator = embeddingGenerator,
+                    queryPrefix = queryPrefix,
                     faissIndex = faissIndex,
                     llm = llm,
                     db = db,
@@ -810,6 +813,7 @@ class TaskBenchmark(private val context: Context) {
         questionIndex: Int,
         question: String,
         embeddingGenerator: EmbeddingGenerator,
+        queryPrefix: String,
         faissIndex: FaissIndex,
         llm: LocalLLM,
         k: Int,
@@ -832,7 +836,7 @@ class TaskBenchmark(private val context: Context) {
             if (!noContext) {
                 // Generate query embeddings and measure time
                 val queryEmbeddingStart = System.nanoTime()
-                val queryEmbedding = embeddingGenerator.generateQuery(question)
+                val queryEmbedding = embeddingGenerator.generate(queryPrefix + question)
                 val queryEmbeddingEnd = System.nanoTime()
                 metrics.queryEmbeddingsMs = (queryEmbeddingEnd - queryEmbeddingStart) / 1_000_000L
 
