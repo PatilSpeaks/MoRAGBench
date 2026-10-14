@@ -1,6 +1,7 @@
 package com.example.onnxtok
 
 import android.content.Context
+import com.ml.shubham0204.sentence_embeddings.PoolingStrategy
 import com.ml.shubham0204.sentence_embeddings.SentenceEmbedding
 import kotlinx.coroutines.*
 import java.io.File
@@ -36,7 +37,11 @@ class EmbeddingGenerator(private val context: Context) : AutoCloseable {
             useTokenTypeIds = embeddingModel.useTokenTypeIds,
             outputTensorName = embeddingModel.outputTensorName,
             backend = backend,
-            normalizeEmbeddings = normalizeEmbeddings
+            normalizeEmbeddings = normalizeEmbeddings,
+            poolingStrategy = when (embeddingModel.poolingStrategy) {
+                EmbeddingPoolingStrategy.MEAN -> PoolingStrategy.MEAN
+                EmbeddingPoolingStrategy.CLS -> PoolingStrategy.CLS
+            }
         )
         sentenceEmbedding = se
     }

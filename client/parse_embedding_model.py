@@ -32,6 +32,18 @@ EMBEDDING_CONFIGS = {
          SupportedEmbeddingDType.FLOAT32_O4]
          # FP16 is available but not recommended - see EMBEDDINGGEMMA_MODEL_BY_DTYPE
     ),
+    SupportedEmbeddingModel.BGE_SMALL_EN_V1_5: (
+        "BAAI/bge-small-en-v1.5",
+        [SupportedEmbeddingDType.FLOAT32_O1,
+         SupportedEmbeddingDType.FLOAT32_O2,
+         SupportedEmbeddingDType.FLOAT32_O3,
+         SupportedEmbeddingDType.FLOAT32_O4,
+         SupportedEmbeddingDType.INT8,
+         SupportedEmbeddingDType.Q4,
+         SupportedEmbeddingDType.Q4_NO_GATHER,
+         SupportedEmbeddingDType.QUANTIZED,
+         SupportedEmbeddingDType.FP16]
+    ),
 }
 
 EMBEDDINGGEMMA_MODEL_BY_DTYPE = {
@@ -103,6 +115,30 @@ def parse_embedding(embedding: Embedding, token: str | None, embedding_dir: str)
                 raise RuntimeError("Invalid or missing Hugging Face token") from e
             else:
                 raise RuntimeError("Error downloading Embedding model") from e
+
+    elif name == SupportedEmbeddingModel.BGE_SMALL_EN_V1_5:
+        try:
+            snapshot_download(
+                repo_id=embedding_hf_path,
+                local_dir=dir_path,
+                token=token,
+                allow_patterns=[
+                    "tokenizer.json",
+                    "onnx/model.onnx",
+                ],
+            )
+
+            shutil.move(
+                os.path.join(dir_path, "onnx", "model.onnx"),
+                model_path,
+            )
+            os.removedirs(os.path.join(dir_path, "onnx"))
+
+        except HfHubHTTPError as e:
+            if e.response is not None and e.response.status_code in (401, 403):
+                raise RuntimeError("Invalid or missing Hugging Face token") from e
+            else:
+                raise RuntimeError("Error downloading BGE embedding model") from e
 
     elif name == SupportedEmbeddingModel.EMBEDDINGGEMMA:
         model_file, data_file = EMBEDDINGGEMMA_MODEL_BY_DTYPE.get(dtype)

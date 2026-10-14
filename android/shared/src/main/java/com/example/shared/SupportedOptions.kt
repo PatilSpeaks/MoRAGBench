@@ -6,6 +6,7 @@ import com.example.local_llm.RoleTokenIds
 import com.example.local_llm.TokenizerBridge
 import com.example.local_llm.TokenizerSource
 import com.example.onnxtok.EmbeddingModel
+import com.example.onnxtok.EmbeddingPoolingStrategy
 
 data class ModelPathOverrides(
     val tokenizer: TokenizerSource? = null,
@@ -321,6 +322,15 @@ object SupportedEmbeddingModels {
             useTokenTypeIds = false,
             outputTensorName = "sentence_embedding",
             dim = 768
+        ),
+        EmbeddingModel(
+            modelPath = "embedding/bge-small-en-v1.5/model.onnx",
+            tokenizerPath = "embedding/bge-small-en-v1.5/tokenizer.json",
+            useTokenTypeIds = true,
+            outputTensorName = "last_hidden_state",
+            dim = 384,
+            poolingStrategy = EmbeddingPoolingStrategy.CLS,
+            queryPrefix = "Represent this sentence for searching relevant passages: "
         ),
     )
 
