@@ -46,7 +46,7 @@ ANN_CONFIG_PATH = f"{ANN_DIR}/config.json"
 
 # Server dirs
 SERVER_RESULTS_DIR = "results"
-SETTINGS_NOTE = "push_settings.json"
+SETTINGS_NOTE = "dataset_settings.json"
 SERVER_ANN_DATASET_DIR = f"{SDCARD_BASE}/{ANN_DIR}/ann_dataset"
 
 # Client dir
